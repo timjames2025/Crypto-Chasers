@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Chasers: The Blockchain Detective</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0c0c20;
+            font-family: 'Courier New', monospace;
+            color: #33ff99;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            border: 4px solid #33ff99;
+            box-shadow: 0 0 20px rgba(51, 255, 153, 0.5);
+            background-color: #0c0c20;
+            overflow: hidden;
+        }
+        .game-board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+        }
+        .cell {
+            border: 1px dotted rgba(51, 255, 153, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+        .ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            background-color: rgba(12, 12, 32, 0.8);
+            border-bottom: 2px solid #33ff99;
+            z-index: 10;
+        }
+        .timer, .score {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 5px #33ff99;
+        }
+        .entity {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        .player {
+            z-index: 5;
+        }
+        .funds {
+            z-index: 2;
+        }
+        .mixer {
+            animation: spin 2s linear infinite;
+        }
+        .bridge {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .checkpoint {
+            background-color: rgba(51, 255, 153, 0.3);
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        .analysis-tool {
+            background-color: rgba(255, 215, 0, 0.3);
+            border-radius: 50%;
+            animation: expand 1s ease-out forwards;
+        }
+        .frozen {
+            animation: freeze 0.5s forwards;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+        @keyframes expand {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        @keyframes freeze {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.5) saturate(0) contrast(1.5); }
+        }
+        .ethereum { color: #A070FF; text-shadow: 0 0 5px #A070FF; }
+        .bitcoin { color: #FF9900; text-shadow: 0 0 5px #FF9900; }
+        .polygon { color: #2891F9; text-shadow: 0 0 5px #2891F9; }
+        .privacy { color: #FF3333; text-shadow: 0 0 5px #FF3333; }
+        
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(12, 12, 32, 0.8);
+            border-top: 2px solid #33ff99;
+            text-align: center;
+            z-index: 10;
+        }
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(12, 12, 32, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            display: none;
+        }
+        .game-over h1 {
+            font-size: 48px;
+            color: #33ff99;
+            text-shadow: 0 0 10px #33ff99;
+            margin-bottom: 20px;
+        }
+        .game-over .final-score {
+            font-size: 36px;
+            margin-bottom: 30px;
+        }
+        .game-over button {
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #33ff99;
+            color: #0c0c20;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .game-over button:hover {
+            background-color: #0c0c20;
+            color: #33ff99;
+            box-shadow: 0 0 10px #33ff99;
+        }
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(12, 12, 32, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+        }
+        .start-screen h1 {
+            font-size: 36px;
+            color: #33ff99;
+            text-shadow: 0 0 10px #33ff99;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .start-screen p {
+            width: 80%;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .start-screen button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #33ff99;
+            color: #0c0c20;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .start-screen button:hover {
+            background-color: #0c0c20;
+            color: #33ff99;
+            box-shadow: 0 0 15px #33ff99;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 10px;
+        }
+        .legend-icon {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="start-screen">
+            <h1>CRYPTO CHASERS:<br>The Blockchain Detective</h1>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-icon">🕵️</span> You (Detective)</div>
+                <div class="legend-item"><span class="legend-icon">💰</span> Stolen Funds</div>
+                <div class="legend-item"><span class="legend-icon">🔄</span> Mixers</div>
+                <div class="legend-item"><span class="legend-icon">🌉</span> Bridges</div>
+                <div class="legend-item"><span class="legend-icon">🛡️</span> Checkpoints</div>
+            </div>
+            <p>Track down and freeze stolen crypto before it disappears! Use arrow keys to move, SPACE for analysis tools, Z to place checkpoints, and X for cross-chain tracking.</p>
+            <p>You have 90 seconds to recover as much stolen funds as possible.</p>
+            <button id="start-button">START MISSION</button>
+        </div>
+        
+        <div class="ui-container">
+            <div class="timer">Time: 90s</div>
+            <div class="score">Recovered: 0%</div>
+        </div>
+        
+        <div class="game-board" id="game-board">
+            <!-- Game cells will be generated here -->
+        </div>
+        
+        <div class="controls">
+            ⬅️⬆️⬇️➡️: Move | SPACE: Analysis Tool | Z: Checkpoint | X: Cross-chain Tracking
+        </div>
+        
+        <div class="game-over">
+            <h1>MISSION COMPLETE</h1>
+            <div class="final-score">Funds Recovered: 0%</div>
+            <button id="restart-button">TRY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const config = {
+            boardSize: 15,
+            gameTime: 90,
+            initialFunds: 10,
+            mixerCount: 3,
+            bridgeCount: 4,
+            checkpointDuration: 5000,
+            analysisDuration: 3000,
+            crossChainCooldown: 7000,
+            fundMovementInterval: 1000,
+            chanceToPeel: 0.3
+        };
+
+        // Game state
+        let state = {
+            player: { x: 7, y: 7 },
+            funds: [],
+            mixers: [],
+            bridges: [],
+            checkpoints: [],
+            analysisTools: [],
+            gameRunning: false,
+            timeRemaining: config.gameTime,
+            recoveredFunds: 0,
+            totalFundsCreated: 0,
+            canUseAnalysis: true,
+            canUseCrossChain: true,
+            crossChainActive: false
+        };
+
+        // Chain types for visual styling
+        const chainTypes = ['ethereum', 'bitcoin', 'polygon', 'privacy'];
+
+        // DOM elements
+        const gameBoard = document.getElementById('game-board');
+        const timerEl = document.querySelector('.timer');
+        const scoreEl = document.querySelector('.score');
+        const gameOverEl = document.querySelector('.game-over');
+        const finalScoreEl = document.querySelector('.final-score');
+        const startScreen = document.querySelector('.start-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+
+        // Initialize the game board
+        function initializeBoard() {
+            gameBoard.innerHTML = '';
+            for (let y = 0; y < config.boardSize; y++) {
+                for (let x = 0; x < config.boardSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        // Create entity element
+        function createEntity(type, x, y, emoji, className = '') {
+            const entity = document.createElement('div');
+            entity.classList.add('entity', type);
+            if (className) entity.classList.add(className);
+            entity.textContent = emoji;
+            updateEntityPosition(entity, x, y);
+            gameBoard.appendChild(entity);
+            return entity;
+        }
+
+        // Update entity position
+        function updateEntityPosition(entity, x, y) {
+            const cellSize = gameBoard.clientWidth / config.boardSize;
+            entity.style.left = `${x * cellSize}px`;
+            entity.style.top = `${y * cellSize}px`;
+            entity.dataset.x = x;
+            entity.dataset.y = y;
+        }
+
+        // Create player
+        function createPlayer() {
+            const { x, y } = state.player;
+            return createEntity('player', x, y, '🕵️');
+        }
+
+        // Create fund
+        function createFund(x, y, amount = 100, chainType = 'ethereum') {
+            const fund = {
+                x,
+                y,
+                amount,
+                chainType,
+                element: createEntity('funds', x, y, '💰', chainType),
+                frozen: false
+            };
+            fund.element.setAttribute('data-amount', amount);
+            state.funds.push(fund);
+            state.totalFundsCreated += amount;
+            return fund;
+        }
+
+        // Create mixers
+        function createMixers() {
+            for (let i = 0; i < config.mixerCount; i++) {
+                const x = Math.floor(Math.random() * config.boardSize);
+                const y = Math.floor(Math.random() * config.boardSize);
+                const mixer = {
+                    x,
+                    y,
+                    element: createEntity('mixer', x, y, '🔄')
+                };
+                state.mixers.push(mixer);
+            }
+        }
+
+        // Create bridges
+        function createBridges() {
+            for (let i = 0; i < config.bridgeCount; i++) {
+                const x = Math.floor(Math.random() * config.boardSize);
+                const y = Math.floor(Math.random() * config.boardSize);
+                const targetX = Math.floor(Math.random() * config.boardSize);
+                const targetY = Math.floor(Math.random() * config.boardSize);
+                const bridge = {
+                    x,
+                    y,
+                    targetX,
+                    targetY,
+                    element: createEntity('bridge', x, y, '🌉')
+                };
+                state.bridges.push(bridge);
+            }
+        }
+
+        // Create initial funds
+        function createInitialFunds() {
+            for (let i = 0; i < config.initialFunds; i++) {
+                const x = Math.floor(Math.random() * config.boardSize);
+                const y = Math.floor(Math.random() * config.boardSize);
+                const chainType = chainTypes[Math.floor(Math.random() * chainTypes.length)];
+                createFund(x, y, 100, chainType);
+            }
+        }
+
+        // Move entity with collision detection
+        function moveEntity(entity, dx, dy) {
+            const newX = parseInt(entity.dataset.x) + dx;
+            const newY = parseInt(entity.dataset.y) + dy;
+            
+            // Check boundaries
+            if (newX >= 0 && newX < config.boardSize && newY >= 0 && newY < config.boardSize) {
+                updateEntityPosition(entity, newX, newY);
+                return true;
+            }
+            return false;
+        }
+
+        // Handle player movement
+        function movePlayer(dx, dy) {
+            if (!state.gameRunning) return;
+            
+            const playerElement = document.querySelector('.player');
+            const moved = moveEntity(playerElement, dx, dy);
+            
+            if (moved) {
+                state.player.x = parseInt(playerElement.dataset.x);
+                state.player.y = parseInt(playerElement.dataset.y);
+            }
+        }
+
+        // Move funds randomly
+        function moveFunds() {
+            state.funds.forEach(fund => {
+                if (fund.frozen) return;
+                
+                // Check if fund is on a mixer
+                const onMixer = state.mixers.some(mixer => mixer.x === fund.x && mixer.y === fund.y);
+                if (onMixer && Math.random() < 0.7) {
+                    splitFund(fund);
+                    return;
+                }
+                
+                // Check if fund is on a bridge
+                const bridge = state.bridges.find(bridge => bridge.x === fund.x && bridge.y === fund.y);
+                if (bridge) {
+                    teleportFund(fund, bridge);
+                    return;
+                }
+                
+                // Check if fund is on a checkpoint
+                const onCheckpoint = state.checkpoints.some(cp => cp.x === fund.x && cp.y === fund.y && !cp.used);
+                if (onCheckpoint) {
+                    freezeFund(fund);
+                    return;
+                }
+                
+                // Random movement
+                if (Math.random() < 0.4) {
+                    const directions = [
+                        { dx: 0, dy: -1 },  // Up
+                        { dx: 1, dy: 0 },   // Right
+                        { dx: 0, dy: 1 },   // Down
+                        { dx: -1, dy: 0 }   // Left
+                    ];
+                    
+                    const direction = directions[Math.floor(Math.random() * directions.length)];
+                    const newX = fund.x + direction.dx;
+                    const newY = fund.y + direction.dy;
+                    
+                    if (newX >= 0 && newX < config.boardSize && newY >= 0 && newY < config.boardSize) {
+                        fund.x = newX;
+                        fund.y = newY;
+                        updateEntityPosition(fund.element, fund.x, fund.y);
+                    }
+                }
+                
+                // Random peeling (splitting into smaller amounts)
+                if (Math.random() < config.chanceToPeel && fund.amount > 20) {
+                    peelFund(fund);
+                }
+            });
+        }
+
+        // Split fund at mixer
+        function splitFund(fund) {
+            if (fund.amount <= 20) return;
+            
+            const splitAmount = Math.floor(fund.amount / 2);
+            fund.amount -= splitAmount;
+            
+            // Create new fund with split amount
+            const directions = [
+                { dx: 1, dy: 0 },
+                { dx: -1, dy: 0 },
+                { dx: 0, dy: 1 },
+                { dx: 0, dy: -1 }
+            ];
+            
+            const direction = directions[Math.floor(Math.random() * directions.length)];
+            const newX = Math.max(0, Math.min(config.boardSize - 1, fund.x + direction.dx));
+            const newY = Math.max(0, Math.min(config.boardSize - 1, fund.y + direction.dy));
+            
+            // Randomly change chain when splitting
+            const newChainType = chainTypes[Math.floor(Math.random() * chainTypes.length)];
+            createFund(newX, newY, splitAmount, newChainType);
+            
+            // Update original fund
+            fund.element.setAttribute('data-amount', fund.amount);
+        }
+
+        // Teleport fund through bridge
+        function teleportFund(fund, bridge) {
+            fund.x = bridge.targetX;
+            fund.y = bridge.targetY;
+            updateEntityPosition(fund.element, fund.x, fund.y);
+            
+            // Change chain type when using bridge
+            const newChainType = chainTypes[Math.floor(Math.random() * chainTypes.length)];
+            fund.chainType = newChainType;
+            fund.element.className = 'entity funds ' + newChainType;
+        }
+
+        // Peel fund (money laundering technique)
+        function peelFund(fund) {
+            const peelAmount = Math.floor(fund.amount * 0.1);
+            fund.amount -= peelAmount;
+            
+            const newX = Math.floor(Math.random() * config.boardSize);
+            const newY = Math.floor(Math.random() * config.boardSize);
+            
+            createFund(newX, newY, peelAmount, fund.chainType);
+            fund.element.setAttribute('data-amount', fund.amount);
+        }
+
+        // Freeze fund when caught
+        function freezeFund(fund) {
+            if (fund.frozen) return;
+            
+            fund.frozen = true;
+            fund.element.classList.add('frozen');
+            state.recoveredFunds += fund.amount;
+            updateScore();
+        }
+
+        // Place checkpoint
+        function placeCheckpoint() {
+            if (!state.gameRunning) return;
+            
+            const checkpoint = {
+                x: state.player.x,
+                y: state.player.y,
+                used: false,
+                element: createEntity('checkpoint', state.player.x, state.player.y, '🛡️')
+            };
+            
+            state.checkpoints.push(checkpoint);
+            
+            // Remove checkpoint after duration
+            setTimeout(() => {
+                if (checkpoint.element.parentNode) {
+                    checkpoint.element.parentNode.removeChild(checkpoint.element);
+                }
+                state.checkpoints = state.checkpoints.filter(cp => cp !== checkpoint);
+            }, config.checkpointDuration);
+        }
+
+        // Use analysis tool
+        function useAnalysisTool() {
+            if (!state.gameRunning || !state.canUseAnalysis) return;
+            
+            state.canUseAnalysis = false;
+            
+            const tool = {
+                x: state.player.x,
+                y: state.player.y,
+                element: createEntity('analysis-tool', state.player.x, state.player.y, '🔍')
+            };
+            
+            state.analysisTools.push(tool);
+            
+            // Reveal all funds on the board temporarily
+            state.funds.forEach(fund => {
+                if (!fund.frozen) {
+                    fund.element.style.zIndex = "4";
+                    fund.element.style.opacity = "1";
+                }
+            });
+            
+            // Remove tool and effect after duration
+            setTimeout(() => {
+                if (tool.element.parentNode) {
+                    tool.element.parentNode.removeChild(tool.element);
+                }
+                state.analysisTools = state.analysisTools.filter(t => t !== tool);
+                
+                state.funds.forEach(fund => {
+                    if (!fund.frozen) {
+                        fund.element.style.zIndex = "2";
+                    }
+                });
+                
+                setTimeout(() => {
+                    state.canUseAnalysis = true;
+                }, 3000);
+            }, config.analysisDuration);
+        }
+
+        // Use cross-chain tracking
+        function useCrossChainTracking() {
+            if (!state.gameRunning || !state.canUseCrossChain) return;
+            
+            state.canUseCrossChain = false;
+            state.crossChainActive = true;
+            
+            // Highlight all funds across chains
+            state.funds.forEach(fund => {
+                if (!fund.frozen) {
+                    fund.element.style.boxShadow = "0 0 10px #FFF";
+                    fund.element.style.zIndex = "4";
+                }
+            });
+            
+            // Slow down all fund movement temporarily
+            const originalInterval = config.fundMovementInterval;
+            config.fundMovementInterval = config.fundMovementInterval * 2;
+            
+            // Remove effect after duration
+            setTimeout(() => {
+                state.crossChainActive = false;
+                
+                state.funds.forEach(fund => {
+                    if (!fund.frozen) {
+                        fund.element.style.boxShadow = "";
+                        fund.element.style.zIndex = "2";
+                    }
+                });
+                
+                config.fundMovementInterval = originalInterval;
+                
+                setTimeout(() => {
+                    state.canUseCrossChain = true;
+                }, 5000);
+            }, config.crossChainCooldown);
+        }
+
+        // Update the score display
+        function updateScore() {
+            const recoveryPercentage = Math.floor((state.recoveredFunds / state.totalFundsCreated) * 100);
+            scoreEl.textContent = `Recovered: ${recoveryPercentage}%`;
+        }
+
+        // Update the timer display
+        function updateTimer() {
+            timerEl.textContent = `Time: ${state.timeRemaining}s`;
+        }
+
+        // End the game
+        function endGame() {
+            state.gameRunning = false;
+            clearInterval(state.timerInterval);
+            clearInterval(state.fundMovementInterval);
+            
+            const recoveryPercentage = Math.floor((state.recoveredFunds / state.totalFundsCreated) * 100);
+            finalScoreEl.textContent = `Funds Recovered: ${recoveryPercentage}%`;
+            
+            gameOverEl.style.display = 'flex';
+        }
+
+        // Start the game
+        function startGame() {
+            // Reset state
+            state = {
+                player: { x: 7, y: 7 },
+                funds: [],
+                mixers: [],
+                bridges: [],
+                checkpoints: [],
+                analysisTools: [],
+                gameRunning: true,
+                timeRemaining: config.gameTime,
+                recoveredFunds: 0,
+                totalFundsCreated: 0,
+                canUseAnalysis: true,
+                canUseCrossChain: true,
+                crossChainActive: false
+            };
+            
+            // Clear the board
+            gameBoard.innerHTML = '';
+            
+            // Initialize the game elements
+            initializeBoard();
+            createMixers();
+            createBridges();
+            createInitialFunds();
+            const playerElement = createPlayer();
+            
+            // Hide start screen and game over screen
+            startScreen.style.display = 'none';
+            gameOverEl.style.display = 'none';
+            
+            // Start the timers
+            updateTimer();
+            updateScore();
+            
+            state.timerInterval = setInterval(() => {
+                state.timeRemaining--;
+                updateTimer();
+                
+                // Add new funds periodically
+                if (state.timeRemaining % 10 === 0) {
+                    const x = Math.floor(Math.random() * config.boardSize);
+                    const y = Math.floor(Math.random() * config.boardSize);
+                    const chainType = chainTypes[Math.floor(Math.random() * chainTypes.length)];
+                    createFund(x, y, 100, chainType);
+                }
+                
+                if (state.timeRemaining <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            state.fundMovementInterval = setInterval(moveFunds, 1000);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (!state.gameRunning) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowRight':
+                    movePlayer(1, 0);
+                    break;
+                case 'ArrowDown':
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                    movePlayer(-1, 0);
+                    break;
+                case ' ':
+                    useAnalysisTool();
+                    break;
+                case 'z':
+                case 'Z':
+                    placeCheckpoint();
+                    break;
+                case 'x':
+                case 'X':
+                    useCrossChainTracking();
+                    break;
+            }
+        });
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        // Initialize the game board on load
+        initializeBoard();
+    </script>
+</body>
+</html>
